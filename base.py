@@ -19,7 +19,7 @@ def run():
     dispatcher.add_handler(start_handler)
 
     def caps(bot, update, args):
-        text_caps = ''.join(args).upper()
+        text_caps = '%s' % ' '.join(args).upper()
         bot.sendMessage(chat_id=update.message.chat_id, text=text_caps)
         logging.info('Command \'caps\' invoked by char id [{0}]'.format(update.message.chat_id))
     caps_handler = CommandHandler('caps', caps, pass_args=True)
@@ -27,7 +27,28 @@ def run():
 
     #Обработка текста
     def echo(bot, update):
-        bot.sendMessage(chat_id=update.message.chat_id, text=update.message.text)
+        utext = update.message.text
+        utext_cf = utext.casefold()
+        uchat = update.message.chat_id
+        if 'привет'.casefold() in utext_cf:
+            bot.sendMessage(chat_id=uchat, text='Привет, друг!')
+        elif 'напомни'.casefold() in utext_cf:
+            bot.sendMessage(chat_id=uchat, text='Разве мы уже на \"ты\"? ;)')
+            days = ['понедельник', 'вторник', 'сред', 'четверг', 'пятниц', 'суббот', 'воскресенье']
+            days_match = []
+
+            for day in days:
+                if day in utext_cf:
+                    if day == 'сред': day = 'cреду'
+                    elif day == 'пятниц': day = 'пятницу'
+                    elif day == 'суббот': day = 'субботу'
+                    days_match.append(day)
+            if len(days_match):
+                dayformat = ', '.join(days_match[:-1]) + ' и %s' % days_match[-1]
+                bot.sendMessage(chat_id=uchat, text='Хорошо, я напомню тебе об этом в %s' % dayformat)
+        else:
+            bot.sendMessage(chat_id=uchat, text='Не знаю, что сказать, поэтому просто предразню :Р')
+            bot.sendMessage(chat_id=uchat, text=utext)
 
     from telegram.ext import MessageHandler, Filters
     echo_handler = MessageHandler([Filters.text], echo)
@@ -38,10 +59,13 @@ def run():
     logging.info('Started main updater polling')
     print('Running the main script normally')
 
+    #Режим терминала
     response = ''
     while not response == 'stop':
         response = input('> ')
         if response.casefold() == 'say hi': print('Oh hi there')
+
+    #Отключение бота
     logging.info('Stopping main updater polling')
     print('Stopping the main script...')
     updater.stop()
