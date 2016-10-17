@@ -1,33 +1,19 @@
 import sqlite3
 import logging
+import datetime
+import events
+import data_control
+
+
+
 logging.basicConfig(filename='logs/base.log', format='<%(asctime)s> [%(name)s] [%(levelname)s]: %(message)s',
                     level=logging.INFO)
-#Работа с базой данных
-
-def add_event(datapath, date_real, date_notify, duration, description, category = 'basic', rating = 1):
-    print('Procedure add_event have started its job')
-    connect = sqlite3.connect(datapath)
-    cursor = connect.cursor()
-
-    cursor.execute('SELECT * FROM events')
-    row = cursor.fetchone()
-    # выводим список пользователей в цикле
-    count = 0
-    while row is not None:
-        print("ID: " + str(row[0]) + "\nДата события: " + row[1] + "\nДата напоминания: " + row[2])
-        count += 1
-        row = cursor.fetchone()
-
-    #cursor.execute("INSERT INTO events (id,date_real,date_notify,duration,category,rating,description) VALUES ('%d','%s','%s','%d','%s','%d','%s')" % (count, date_real, date_notify, duration, description, category, rating))
-
-    connect.commit()
-    cursor.close()
-    connect.close()
-    print('oh hai')
 
 def run():
+    #Сообщение в лог о старте работы скрипта
     logging.info('Script execution started')
     print('Script started')
+
     from telegram.ext import Updater
     updater = Updater(token='289680799:AAHDpjJLcqBF0Flcybl3GyE8wTpdfiZjM4Y')
     dispatcher = updater.dispatcher
@@ -42,30 +28,38 @@ def run():
     dispatcher.add_handler(start_handler)
 
     def test(bot, update):
-        bot.sendMessage(chat_id=update.message.chat_id, text="Test executed")
+        '''
+        Тестовая команда
+        В данный момент создает новую запись в базу данных с параметрами по-умолчанию, chat_id вызвавшего и текстом 'telegram cmd test'
+        :param bot:
+        :param update:
+        :return:
+        '''
+        #Уникальный id пользователя
+        u_chat = int(update.message.chat_id)
 
-        from events import Event
-        new_event = Event(datetime.datetime.now(), datetime.datetime.now(), 0, 'Пример', 'basic', 1)
-        bot.sendMessage(chat_id=update.message.chat_id, text=new_event)
-        bot.sendMessage(chat_id=update.message.chat_id, text='123')
-
-        import data_control
-        db_control = data_control.DataControl('database.db')
+        bot.sendMessage(chat_id=u_chat, text="Test executed")
+        #Создаем событие для последующей записи в базу данных
+        e = events.Event(u_chat, datetime.datetime.now(), datetime.datetime.now(), 0, 'telegram cmd test')
+        #Подключаемся к базе данных
         db_control.start()
-        print(db_control.get_events())
-        new_id = db_control.get_events_count()
-        db_control.add_event(update.message.chat_id,
-                            new_id,
-                            datetime.datetime.now(),
-                            datetime.datetime.now(),
-                            0, 'Пример', 'basic', 1)
+        #Добавляем запись в базу данных
+        db_control.add_event(db_control.get_events_count(), e)
+        #Отключаемся от базы данныз
         db_control.stop()
-
         logging.info('Command \'test\' invoked by chat id [{0}]'.format(update.message.chat_id))
     start_handler = CommandHandler('test', test)
     dispatcher.add_handler(start_handler)
 
     def caps(bot, update, args):
+        '''
+        Тестовая команда
+        В данный момент возвращает UPPERCASE версию присланного боту сообщения
+        :param bot:
+        :param update:
+        :param args:
+        :return:
+        '''
         text_caps = '%s' % ' '.join(args).upper()
         bot.sendMessage(chat_id=update.message.chat_id, text=text_caps)
         logging.info('Command \'caps\' invoked by char id [{0}]'.format(update.message.chat_id))
@@ -74,9 +68,19 @@ def run():
 
     #Обработка текста
     def echo(bot, update):
+        '''
+        Общая обработка текста
+        :param bot:
+        :param update:
+        :return:
+        '''
+        #Текст, поступивший боту
         utext = update.message.text
+        #Текст без учета заглавных букв
         utext_cf = utext.casefold()
+        #Уникальный ID пользователя
         uchat = update.message.chat_id
+        #Несколько тестовых проверок на совпадения
         if 'привет'.casefold() in utext_cf:
             bot.sendMessage(chat_id=uchat, text='Привет, друг!')
         elif 'напомни'.casefold() in utext_cf:
@@ -106,19 +110,27 @@ def run():
     logging.info('Started main updater polling')
     print('Running the main script normally')
 
+    #Создание экземпляра контролирующего работу с базой данных класса
+    db_control = data_control.DataControl('database.db')
     #Режим терминала
-    response = ''
     while True:
+        #Приём команд на выполнение
         response = input('> ').casefold()
         if response == 'stop': break
         elif response == 'say hi': print('Oh hi there')
-        elif response == 'add':
-            import datetime
-            date_real = datetime.datetime(2016, 10, 10, 23, 55, 0)
-            date_notify = datetime.datetime(2016, 10, 10, 23, 50, 0)
-            add_event('database.db', date_real, date_notify, 0, 'Пример')
-        elif response == 'controlinit':
-            pass
+        elif response == 'eadd':
+            #Добавляет тестовое событие в базу данных
+            e = events.Event(0, datetime.datetime.now(), datetime.datetime.now(), 0, 'datacontrol add')
+            db_control.start()
+            #Добавляем событие и присваиваем ему id количества имеющихся элементов в базе
+            db_control.add_event(db_control.get_events_count(), e)
+            db_control.stop()
+        elif response == 'eshow':
+            #Выводит события из базы данных на экран
+            db_control.start()
+            for event in db_control.get_events(False):
+                print(event)
+            db_control.stop()
         else:
             print('Unknown command')
 
