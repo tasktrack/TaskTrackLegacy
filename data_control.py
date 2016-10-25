@@ -5,7 +5,7 @@ import datetime
 
 class DataControl:
     def __init__(self, datapath):
-        #Путь к базе данных
+        # Путь к базе данных
         self.datapath = datapath
         self.connect = None
         self.cursor = None
@@ -13,7 +13,7 @@ class DataControl:
     def __repr__(self):
         return '> datacontrol > \'{0}\', \'{1}\', \'{2}\''.format(self.datapath, self.connect, self.cursor)
 
-    def start(self):
+    def __enter__(self):
         '''
         Подключение к базе данных
         :return:
@@ -21,9 +21,28 @@ class DataControl:
         self.connect = sqlite3.connect(self.datapath)
         self.cursor = self.connect.cursor()
 
-    def stop(self):
+    def __exit__(self, exc_type, exc_value, traceback):
         '''
         Отключение от базы данных
+        :return:
+        '''
+        self.cursor.close()
+        self.cursor = None
+        self.connect.close()
+        self.connect = None
+        return self
+
+    def start(self):
+        '''
+        Подключение к базе данных (эквивалент __enter__)
+        :return:
+        '''
+        self.connect = sqlite3.connect(self.datapath)
+        self.cursor = self.connect.cursor()
+
+    def stop(self):
+        '''
+        Отключение от базы данных (эквивалент __exit__)
         :return:
         '''
         self.cursor.close()
