@@ -1,3 +1,6 @@
+# coding: utf8
+
+
 class Event:
     def __init__(self, chat_id, date_real, date_notify, duration, description, category = 'basic', rating = 1):
         # Уникальный id пользователя

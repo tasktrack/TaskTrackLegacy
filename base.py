@@ -1,3 +1,5 @@
+# coding: utf8
+
 import logging
 import datetime
 import events

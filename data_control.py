@@ -1,3 +1,5 @@
+# coding: utf8
+
 import sqlite3
 import events
 import datetime

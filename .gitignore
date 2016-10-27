@@ -4,3 +4,6 @@ __pycache__/data_control.cpython-35.pyc
 __pycache__/events.cpython-35.pyc
 *.xml
 .idea/workspace.xml
+*.graphml
+*.iml
+__pycache__/event_map.cpython-35.pyc
