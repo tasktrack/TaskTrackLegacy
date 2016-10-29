@@ -155,6 +155,8 @@ if __name__ == "__main__":
     # Создание экземпляра контролирующего работу с базой данных класса
     db_control = data_control.DataControl('database.db')
 
+    # Комментарий для теста
+
     # Подключение к базе данных и создание первичной карты дня
     db_control.start()
     ev_map = event_map.EventMap(db_control.get_events())
