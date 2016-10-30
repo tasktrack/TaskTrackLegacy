@@ -14,5 +14,5 @@ class databasetests(unittest.TestCase):
         temporaryconnection = sqlite3.connect(self.datapath)
         temporarycursor = temporaryconnection.cursor()
         # Выполнение запроса вернет значение 0, если таблицы не существует
-        tempbool = temporarycursor.execute('SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'users' ')
+        tempbool = temporarycursor.execute('SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'events' ')
         self.assertTrue(tempbool)
