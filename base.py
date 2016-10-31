@@ -5,7 +5,7 @@ import datetime
 import events
 import data_control
 import event_map
-
+import language_processing
 
 logging.basicConfig(filename='logs/base.log', format='<%(asctime)s> [%(name)s] [%(levelname)s]: %(message)s',
                     level=logging.INFO)
@@ -152,10 +152,12 @@ if __name__ == "__main__":
 
     updater = Updater(token='289680799:AAHDpjJLcqBF0Flcybl3GyE8wTpdfiZjM4Y')
 
+    # Создание экземпляра контролирующего обработку речи
+    lg_processing = language_processing.LanguageProcessing()
+    lg_processing.send("Напомни мне купить батон")
+
     # Создание экземпляра контролирующего работу с базой данных класса
     db_control = data_control.DataControl('database.db')
-
-    # Комментарий для теста
 
     # Подключение к базе данных и создание первичной карты дня
     db_control.start()
