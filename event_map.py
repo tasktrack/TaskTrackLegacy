@@ -5,12 +5,8 @@ import datetime
 
 class EventMap:
     def __init__(self, event_list):
-        # Инициализация списка актуальных событий (этого дня)
-        self.actual_events = []
-        # Количество актуальных событий (пока не используется)
-        self.event_count = 0
-        # Загрузка актуальных событий из переданного списка
-        self.check(event_list)
+        # Инициализация и загрузка списка актуальных событий (этого дня)
+        self.actual_events = self.check(event_list)
         # Сортировка списка по возрастанию даты
         self._sort_events()
 
@@ -31,7 +27,6 @@ class EventMap:
 
     def add_event(self, event):
         self.actual_events.append(event)
-        self.event_count += 1
         self._sort_events()
 
     @property
@@ -43,13 +38,16 @@ class EventMap:
         if len(self.actual_events):
             return self.actual_events[0]
 
-    def check(self, event_list):
+    @staticmethod
+    def check(event_list):
         '''
         Выделение из списка всех событий только актуальных
         :param event_list:
         :return:
         '''
+        result = []
         for event in event_list:
-            if event.date_notify.day == datetime.datetime.now().day:
-                self.actual_events.append(event)
-                self.event_count += 1
+            if event.date_notify.day == datetime.datetime.now().day: # and event.date_notify <= datetime.datetime.now():
+                result.append(event)
+        return result
+

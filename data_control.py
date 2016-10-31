@@ -20,7 +20,6 @@ class DataControl:
         Подключение к базе данных
         :return:
         '''
-        # (Для Михаила): функция connect создает базу, если ее нет и подключается, если она существует.
         self.connect = sqlite3.connect(self.datapath)
         self.cursor = self.connect.cursor()
         # Создание таблицы в базе данных, если таковая еще не существует.
