@@ -8,7 +8,7 @@ class Configuration:
         # Путь к файлу конфигурации
         self.config_path = filepath
         # Путь без названия и расширения файла
-        dirpath = '/'.join(self.config_path.split('/')[:-1])
+        dirpath = os.path.dirname(self.config_path)
         # Если директорий не существует, они создаются, и в последнюю помещается пустой файл конфигурации
         if not os.path.exists(dirpath):
             os.makedirs(dirpath)

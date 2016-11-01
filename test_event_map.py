@@ -4,6 +4,7 @@ import unittest
 import event_map
 import events
 import datetime
+import os
 
 
 class EventMapTestCase(unittest.TestCase):
@@ -43,6 +44,7 @@ class EventMapTestCase(unittest.TestCase):
         expected = sorted_list
 
         self.assertEqual(result, expected, 'ERROR: Wrong __init__ result')
+        print('\n{0} > __init__ > OK'.format(os.path.basename(__file__)))
 
     def test_check(self):
         '''
@@ -92,6 +94,7 @@ class EventMapTestCase(unittest.TestCase):
         expected = [event_1, event_4]
 
         self.assertEqual(result, expected, 'ERROR: Wrong check result')
+        print('\n{0} > check > OK'.format(os.path.basename(__file__)))
 
     def test_next_event(self):
         '''
@@ -143,6 +146,7 @@ class EventMapTestCase(unittest.TestCase):
         expected = event_3
 
         self.assertEqual(result, expected, 'ERROR: Wrong next_event result')
+        print('\n{0} > next_event > OK'.format(os.path.basename(__file__)))
 
 if __name__ == '__main__':
     unittest.main()
