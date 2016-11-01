@@ -5,11 +5,8 @@ import datetime
 import events
 import data_control
 import event_map
-
-
-logging.basicConfig(filename='logs/base.log', format='<%(asctime)s> [%(name)s] [%(levelname)s]: %(message)s',
-                    level=logging.INFO)
-
+from configuration import Configuration
+import telegram
 
 def telegram_command_handle(updater, db_control):
     '''
@@ -144,13 +141,23 @@ def terminal_command_handle(db_control, ev_map):
             print('Unknown command')
 
 if __name__ == "__main__":
+    # Настойка конфигурирования
+    conf_telegram = Configuration('conf/access.ini')
+    # Настройка логирования
+    logging.basicConfig(filename='logs/base.log', format='<%(asctime)s> [%(name)s] [%(levelname)s]: %(message)s',
+                        level=logging.INFO)
+
     # Сообщение в лог о старте работы скрипта
     logging.info('Script execution started')
     print('Script started')
 
     from telegram.ext import Updater
 
-    updater = Updater(token='289680799:AAHDpjJLcqBF0Flcybl3GyE8wTpdfiZjM4Y')
+    try:
+        updater = Updater(token=conf_telegram.get_option('Main', 'TelegramToken'))
+    except telegram.error.InvalidToken:
+        print('Critical Error > Telegram Access Token is invalid. Terminal halted.\nCheck the configuration file')
+        exit()
 
     # Создание экземпляра контролирующего работу с базой данных класса
     db_control = data_control.DataControl('database.db')
