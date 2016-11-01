@@ -16,3 +16,6 @@ class databasetests(unittest.TestCase):
         # Выполнение запроса вернет значение 0, если таблицы не существует
         tempbool = temporarycursor.execute('SELECT name FROM sqlite_master WHERE type = \'table\' AND name = \'events\' ')
         self.assertTrue(tempbool)
+
+if __name__ == '__main__':
+    unittest.main()
