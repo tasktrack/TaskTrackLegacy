@@ -7,3 +7,5 @@ __pycache__/events.cpython-35.pyc
 *.graphml
 *.iml
 __pycache__/event_map.cpython-35.pyc
+*.pyc
+*.ini

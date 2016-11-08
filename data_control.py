@@ -22,6 +22,8 @@ class DataControl:
         '''
         self.connect = sqlite3.connect(self.datapath)
         self.cursor = self.connect.cursor()
+        # Создание таблицы в базе данных, если таковая еще не существует.
+        self.cursor.execute('CREATE TABLE if not exists events (id INTEGER PRIMARY KEY, chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), rating VARCHAR(50), description VARCHAR(200))')
 
     def __exit__(self, exc_type, exc_value, traceback):
         '''
@@ -41,6 +43,8 @@ class DataControl:
         '''
         self.connect = sqlite3.connect(self.datapath)
         self.cursor = self.connect.cursor()
+
+        # !!!!!! Здесь также разместить создание таблицы, в случае ее отсутствия
 
     def stop(self):
         '''
