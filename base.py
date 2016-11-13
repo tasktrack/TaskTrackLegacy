@@ -5,16 +5,14 @@ import datetime
 import events
 import data_control
 import event_map
-<<<<<<< HEAD
 import language_processing
+from random import randint
 
 logging.basicConfig(filename='logs/base.log', format='<%(asctime)s> [%(name)s] [%(levelname)s]: %(message)s',
                     level=logging.INFO)
 
-=======
 from configuration import Configuration
 import telegram
->>>>>>> refs/remotes/origin/master
 
 def telegram_command_handle(updater, db_control):
     '''
@@ -34,6 +32,25 @@ def telegram_command_handle(updater, db_control):
 
     start_handler = CommandHandler('start', start)
     dispatcher.add_handler(start_handler)
+
+    def help_me(bot, update):
+        response = 'Список доступных команд:\n' \
+                   '/start - Проверка работоспособности бота\n' \
+                   '/help - Справка по использованию бота\n\n' \
+                   'Формат ввода:\n' \
+                   'dd.mm.yy hh:mm Описание события\n' \
+                   '< или >\n' \
+                   'dd.mm.yyyy hh:mm Описание события\n\n' \
+                   'Например:\n' \
+                   '01.01.2001 00:00 Поздравить друзей с Новым Годом!\n' \
+                   '< или >\n' \
+                   '01.01.01 00:00 Поздравть друзей с Новым Годом!\n\n' \
+                   'Бот умеет говорить умные фразы! Пообщайтесь с ним!'
+        bot.sendMessage(chat_id=update.message.chat_id, text=response)
+        logging.info('Command \'help\' invoked by chat id [{0}]'.format(update.message.chat_id))
+
+    help_me_handler = CommandHandler('help', help_me)
+    dispatcher.add_handler(help_me_handler)
 
     def test(bot, update):
         '''
@@ -57,8 +74,8 @@ def telegram_command_handle(updater, db_control):
         db_control.stop()
         logging.info('Command \'test\' invoked by chat id [{0}]'.format(update.message.chat_id))
 
-    start_handler = CommandHandler('test', test)
-    dispatcher.add_handler(start_handler)
+    test_handler = CommandHandler('test', test)
+    dispatcher.add_handler(test_handler)
 
     def caps(bot, update, args):
         '''
@@ -111,8 +128,24 @@ def telegram_command_handle(updater, db_control):
                 dayformat = ', '.join(days_match[:-1]) + ' и %s' % days_match[-1]
                 bot.sendMessage(chat_id=uchat, text='Хорошо, я напомню тебе об этом в %s' % dayformat)
         else:
-            bot.sendMessage(chat_id=uchat, text='Не знаю, что сказать, поэтому просто предразню :Р')
-            bot.sendMessage(chat_id=uchat, text=utext)
+            lang = language_processing.LanguageProcessing()
+            result = lang.analyse(uchat, utext)
+            if result is None:
+                # Несколько случайных фраз на случай, если боту нечего ответить
+                replies = ['Открытый разум подобен крепости, врата которой распахнуты, а стража погрязла в беспутстве',
+                           'Ничто не истинно, всё дозволено',
+                           'Всё проходит, пройдёт и это. Ничто не проходит',
+                           'Ну, возможно',
+                           'Я в себя, если что-то, но я иду к победе']
+                bot.sendMessage(chat_id=uchat, text=replies[randint(0, len(replies) - 1)])
+                bot.sendMessage(chat_id=uchat, text='Введите /help, чтобы получить справку о формате ввода')
+            else:
+                # Запись события в базу данных
+                db_control.start()
+                db_control.add_event(db_control.get_events_count(), result)
+                db_control.stop()
+                # Уведомление об успешной записи, требуется доработка формата вывода
+                bot.sendMessage(chat_id=uchat, text='Хорошо, я напомню тебе об этом {date}'.format(date=result.date_notify))
 
     from telegram.ext import MessageHandler, Filters
     echo_handler = MessageHandler([Filters.text], echo)
@@ -145,6 +178,10 @@ def terminal_command_handle(db_control, ev_map):
             db_control.stop()
             print(ev_map)
             print('Next event is:\n{event}'.format(event=ev_map.next_event))
+        elif response == 'lreq':
+            request = input('Enter a message to analyse: ')
+            lang = language_processing.LanguageProcessing()
+            print(lang.analyse(0, request))
         else:
             print('Unknown command')
 
@@ -168,8 +205,8 @@ if __name__ == "__main__":
         exit()
 
     # Создание экземпляра контролирующего обработку речи
-    lg_processing = language_processing.LanguageProcessing()
-    lg_processing.send("Напомни мне купить батон")
+    # lg_processing = language_processing.LanguageProcessing()
+    # lg_processing.send("Напомни мне купить батон")
 
     # Создание экземпляра контролирующего работу с базой данных класса
     db_control = data_control.DataControl('database.db')
