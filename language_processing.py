@@ -10,15 +10,11 @@ from configuration import Configuration
 
 
 class LanguageProcessing:
-    # Приложение на сайте ещё не обучил
-    # Поэтому пока что ничего работать не будет
 
     def __init__(self):
         self.pattern_date = r'\b\d{2}\.\d{2}\.\d{2,4}\b'
         self.pattern_time = r'\b\d{2}:\d{2}\b'
-
-        access_token = '2XR2X3MEZI3RCQ4XGXZ43OVQ7GTYZL7W'
-
+        
         '''
         actions = {
             'send': self.send,

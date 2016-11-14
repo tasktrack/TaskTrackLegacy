@@ -41,8 +41,10 @@ class DataControl:
         Подключение к базе данных (эквивалент __enter__)
         :return:
         '''
-        self.connect = sqlite3.connect(self.datapath)
-        self.cursor = self.connect.cursor()
+        self.__enter__()
+
+        #self.connect = sqlite3.connect(self.datapath)
+        #self.cursor = self.connect.cursor()
 
         # !!!!!! Здесь также разместить создание таблицы, в случае ее отсутствия
 

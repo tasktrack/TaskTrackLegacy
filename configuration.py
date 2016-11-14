@@ -14,6 +14,7 @@ class Configuration:
             os.makedirs(dirpath)
             with open(filepath, 'w') as f:
                 f.write('[Main]\nTelegramToken = ')
+                f.write('\nWitToken = ')
         self.config = ConfigParser()
         self.config.read(self.config_path)
 
