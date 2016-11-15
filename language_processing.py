@@ -21,8 +21,8 @@ class LanguageProcessing:
             'remove_task': self.remove_task
         }
 
-        client = Wit(access_token=access_token, actions=actions)
-        client.interactive()
+        self.client = Wit(access_token=access_token, actions=actions)
+        self.client.interactive()
 
     def analyse(self, chat_id, request):
         '''
@@ -106,7 +106,7 @@ class LanguageProcessing:
     def send(request, response):
         print(response['text'])
 
-    def add_task(request):
+    def add_task(request, response):
         context = request['context']
         entities = request['entities']
 
