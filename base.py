@@ -205,8 +205,7 @@ if __name__ == "__main__":
         exit()
 
     # Создание экземпляра контролирующего обработку речи
-    # lg_processing = language_processing.LanguageProcessing()
-    # lg_processing.send("Напомни мне купить батон")
+    #lg_processing = language_processing.LanguageProcessing(bot_conf.get_option('Main', 'WitToken'))
 
     # Создание экземпляра контролирующего работу с базой данных класса
     db_control = data_control.DataControl('database.db')
