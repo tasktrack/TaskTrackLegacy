@@ -15,7 +15,7 @@ class LanguageProcessing:
         self.pattern_date = r'\b\d{2}\.\d{2}\.\d{2,4}\b'
         self.pattern_time = r'\b\d{2}:\d{2}\b'
 
-        actions = {
+        self.actions = {
             'send': self.send,
             'add_task': self.add_task,
             'remove_task': self.remove_task
