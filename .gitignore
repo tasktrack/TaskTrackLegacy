@@ -1,11 +1,5 @@
-database.db
-logs/base.log
-__pycache__/data_control.cpython-35.pyc
-__pycache__/events.cpython-35.pyc
-*.xml
-.idea/workspace.xml
-*.graphml
-*.iml
-__pycache__/event_map.cpython-35.pyc
-*.pyc
-*.ini
+__pycache__/
+.idea/
+logs/
+conf/
+*.db
