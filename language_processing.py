@@ -21,8 +21,8 @@ class LanguageProcessing:
             'remove_task': self.remove_task
         }
 
-        self.client = Wit(access_token=access_token, actions=actions)
-        self.client.interactive()
+        #self.client = Wit(access_token=access_token, actions=actions)
+        #self.client.interactive()
 
     def analyse(self, chat_id, request):
         '''
