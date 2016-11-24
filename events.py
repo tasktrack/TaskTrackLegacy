@@ -27,6 +27,4 @@ class Event:
                                                                                  category=self.category,
                                                                                  rating=self.rating,
                                                                                  description=self.description)
-        # return '{0:9} | {1} | {2} | {3:3} | {5:10} | {6:3} | \'{4}\''.format(self.chat_id, self.date_real, self.date_notify, self.duration, self.description, self.category, self.rating)
         return result
-    
