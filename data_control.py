@@ -165,3 +165,4 @@ class DataControl:
 
     def round_minutes(self, t):  # t - объект datetime
         return t - datetime.timedelta(seconds=t.second, microseconds=t.microsecond)
+
