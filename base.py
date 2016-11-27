@@ -7,9 +7,7 @@ import data_control
 import event_map
 import language_processing
 from random import randint
-
-logging.basicConfig(filename='logs/base.log', format='<%(asctime)s> [%(name)s] [%(levelname)s]: %(message)s',
-                    level=logging.INFO)
+import os
 
 from configuration import Configuration
 import telegram
@@ -186,11 +184,18 @@ def terminal_command_handle(db_control, ev_map):
             print('Unknown command')
 
 if __name__ == "__main__":
-    # Настойка конфигурирования
-    bot_conf = Configuration('conf/access.ini')
     # Настройка логирования
+    if not os.path.exists('logs/base.log'):
+        if not os.path.exists('logs/'):
+            os.mkdir('logs/')
+        with open('logs/base.log', 'w') as f:
+            f.write('[[[ LOGFILE BOUND TO < {} >  MODULE ]]]\n\n'.format(os.path.split(__file__)[1]))
+
     logging.basicConfig(filename='logs/base.log', format='<%(asctime)s> [%(name)s] [%(levelname)s]: %(message)s',
                         level=logging.INFO)
+
+    # Настройка конфигурирования
+    bot_conf = Configuration('conf/access.ini')
 
     # Сообщение в лог о старте работы скрипта
     logging.info('Script execution started')
