@@ -10,23 +10,19 @@ from configuration import Configuration
 
 
 class LanguageProcessing:
-    # Приложение на сайте ещё не обучил
-    # Поэтому пока что ничего работать не будет
 
-    def __init__(self):
+    def __init__(self, access_token):
         self.pattern_date = r'\b\d{2}\.\d{2}\.\d{2,4}\b'
         self.pattern_time = r'\b\d{2}:\d{2}\b'
 
-        access_token = '2XR2X3MEZI3RCQ4XGXZ43OVQ7GTYZL7W'
-
-        '''
-        actions = {
+        self.actions = {
             'send': self.send,
+            'add_task': self.add_task,
+            'remove_task': self.remove_task
         }
 
-        client = Wit(access_token=access_token, actions=actions)
-        client.interactive()
-        '''
+        #self.client = Wit(access_token=access_token, actions=actions)
+        #self.client.interactive()
 
     def analyse(self, chat_id, request):
         '''
@@ -97,5 +93,35 @@ class LanguageProcessing:
 
         return events.Event(chat_id, date_real, date_notify, duration, description)
 
+    def first_entity_value(entities, entity):
+        if entity not in entities:
+            return None
+            val = entities[entity][0]['value']
+            if not val:
+                return None
+        return val['value'] if isinstance(val, dict) else val
+
+    '''Actions'''
+
     def send(request, response):
         print(response['text'])
+
+    def add_task(request, response):
+        context = request['context']
+        entities = request['entities']
+
+        task = first_entity_value(entities, 'task')
+
+        # Добавление задачи в бд
+
+        return context
+
+    def remove_task(request):
+        context = request['context']
+        entities = request['entities']
+
+        task = first_entity_value(entities, 'task')
+
+        # Удаление задачи из бд
+
+        return context
