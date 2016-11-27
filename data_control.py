@@ -3,6 +3,7 @@
 import sqlite3
 import events
 import datetime
+import asyncio
 
 
 class DataControl:
@@ -23,7 +24,8 @@ class DataControl:
         self.connect = sqlite3.connect(self.datapath)
         self.cursor = self.connect.cursor()
         # Создание таблицы в базе данных, если таковая еще не существует.
-        self.cursor.execute('CREATE TABLE if not exists events (id INTEGER PRIMARY KEY, chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), rating VARCHAR(50), description VARCHAR(200))')
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), rating VARCHAR(50), description VARCHAR(200))')
+        self.connect.commit()
 
     def __exit__(self, exc_type, exc_value, traceback):
         '''
@@ -41,12 +43,11 @@ class DataControl:
         Подключение к базе данных (эквивалент __enter__)
         :return:
         '''
-        self.__enter__()
+        self.connect = sqlite3.connect(self.datapath)
+        self.cursor = self.connect.cursor()
 
-        #self.connect = sqlite3.connect(self.datapath)
-        #self.cursor = self.connect.cursor()
-
-        # !!!!!! Здесь также разместить создание таблицы, в случае ее отсутствия
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), rating VARCHAR(50), description VARCHAR(200))')
+        self.connect.commit()
 
     def stop(self):
         '''
@@ -97,6 +98,7 @@ class DataControl:
                                                                                                  desc='Описание'))
         for event in self.get_events():
             print(event)
+
 
     def get_events_count(self):
         '''
@@ -149,3 +151,18 @@ class DataControl:
                             "duration,category,rating,description) VALUES ('{0}',"
                             "'{1}','{2}','{3}','{4}','{5}','{6}','{7}')".format(id, event.chat_id, event.date_real, event.date_notify, event.duration, event.category, event.rating, event.description))
         self.connect.commit()
+
+    def load_actual_events(self):
+        if self.connect is None or self.cursor is None: return None
+
+        actual_events = []
+
+        for current_cell in self.cursor:
+            if self.round_minutes(self.date_convert(current_cell[3])) == self.round_minutes(datetime.datetime.now()):
+                actual_events.append(current_cell)
+
+        return actual_events
+
+    def round_minutes(self, t):  # t - объект datetime
+        return t - datetime.timedelta(seconds=t.second, microseconds=t.microsecond)
+
