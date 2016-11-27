@@ -4,16 +4,19 @@ from wit import Wit
 import datetime
 import re
 import events
-from configuration import Configuration
-
-# Перед запуском необходимо 'pip install wit'
 
 
 class LanguageProcessing:
 
     def __init__(self, access_token):
-        self.pattern_date = r'\b\d{2}\.\d{2}\.\d{2,4}\b'
-        self.pattern_time = r'\b\d{2}:\d{2}\b'
+        # Шаблон для проверки соответствия формального запроса
+        self.pattern = '^(?P<mode>\+|\-)' \
+                       '\s(?P<day_real>\d{2})\.(?P<month_real>\d{2})\.(?P<year_real>\d{2}|\d{4})' \
+                       '\s(?P<hour_real>\d{2}):(?P<minutes_real>\d{2})' \
+                       '(\s(?P<day_notify>\d{2})\.(?P<month_notify>\d{2})\.(?P<year_notify>\d{2}|\d{4})' \
+                       '\s(?P<hour_notify>\d{2}):(?P<minutes_notify>\d{2}))?' \
+                       '(\s(?P<duration>\d+)\s?мин)?(\s(?P<rating>\d+)!)?(\s#(?P<category>\w+))?' \
+                       '\s(?P<description>.+)$'
 
         self.actions = {
             'send': self.send,
@@ -21,25 +24,27 @@ class LanguageProcessing:
             'remove_task': self.remove_task
         }
 
-        #self.client = Wit(access_token=access_token, actions=actions)
-        #self.client.interactive()
+        # self.client = Wit(access_token=access_token, actions=actions)
+        # self.client.interactive()
 
     def analyse(self, chat_id, request):
         '''
-        Функция для определения типа запроса: формальный или неформальный
+        Функция для определения типа запроса (формальный или неформальный) и вызова функции-обработчика
+        :param chat_id:
         :param request:
         :return:
         '''
         result = None
-        # Строки для отладки
-        # sample = '12.11.2016 16:00 Напоминание'
-        # request = sample
-        pattern = re.compile('{date} {time}'.format(date=self.pattern_date, time=self.pattern_time))
-
-        if pattern.match(request):
-            result = self.formal(chat_id, request)
+        if not re.match(self.pattern, request) is None:
+            print('>> formal')
+            mode = re.match(self.pattern, request).group('mode')
+            # Строки для отладки
+            # for group in re.match(self.pattern, request).groups():
+            #     print('>', group)
+            result = [mode, self.formal(chat_id, request)]
         else:
             # Вызов функции распознавания человеческой речи
+            print('>> informal')
             pass
 
         return result
@@ -51,47 +56,36 @@ class LanguageProcessing:
         :param request:
         :return:
         '''
-        # Поиск дат и указания времени в запросе
-        date_list = re.findall(self.pattern_date, request)
-        time_list = re.findall(self.pattern_time, request)
+        exp = re.match(self.pattern, request)
 
-        # Обработка даты и разбиение на день, месяц и год
-        date_real_list = date_list[0].split('.')
-        # Дополнение неполного значения года (к примеру, 01.01.17 будет преобразовано в 01.01.2017)
-        if len(date_real_list[2]) == 2:
-            date_real_list[2] = '20' + date_real_list[2]
-        elif len(date_real_list[2]) == 3:
-            date_real_list[2] = '2' + date_real_list[2]
-        # Обработка времени и разбиение на часы и минуты
-        time_real_list = time_list[0].split(':')
-        # Создание объекта datetime для реальной даты события
-        date_real = datetime.datetime(int(date_real_list[2]), int(date_real_list[1]), int(date_real_list[0]),
-                                      int(time_real_list[0]), int(time_real_list[1]))
-        # Для даты напоминания нужно придумать формат, временное решение
-        date_notify = date_real
-        # Блок для обработки даты напоминания
-        # if len(date_list) > 1 and len(time_list) > 1:
-        #    date_notify_list = date_list[1].split('.')
-        #    time_notify_list = time_list[1].split(':')
-        #    date_notify = datetime.datetime(date_notify_list[0], date_notify_list[1], date_notify_list[2],
-        #                                    time_notify_list[0], time_notify_list[1])
+        year_real = exp.group('year_real')
+        if len(year_real) == 2:
+            year_real = int('20' + year_real)
 
-        # Для продолжитальности нужно придумать формат, временное решение
-        duration = 0
+        date_real = datetime.datetime(year_real,
+                                      int(exp.group('month_real')),
+                                      int(exp.group('day_real')),
+                                      int(exp.group('hour_real')),
+                                      int(exp.group('minutes_real')))
+        if exp.group('year_notify') is None or exp.group('month_notify') is None or exp.group('day_notify') is None:
+            date_notify = date_real
+        else:
+            year_notify = exp.group('year_notify')
+            if len(year_notify) == 2:
+                year_notify = int('20' + year_notify)
+            date_notify = datetime.datetime(year_notify,
+                                            int(exp.group('month_notify')),
+                                            int(exp.group('day_notify')),
+                                            int(exp.group('hour_notify')),
+                                            int(exp.group('minutes_notify')))
+        duration = exp.group('duration')
+        description = exp.group('description')
+        category = exp.group('category')
+        if category is not None:
+            category = category.title()
+        rating = exp.group('rating')
 
-        # Удаления из запроса технической информации для записи пользовательского описания события
-        disassembled_request = request.split()
-        for word in disassembled_request:
-            for date in date_list:
-                if word == date:
-                    disassembled_request.remove(date)
-        for word in disassembled_request:
-            for time in time_list:
-                if word == time:
-                    disassembled_request.remove(time)
-        description = ' '.join(disassembled_request)
-
-        return events.Event(chat_id, date_real, date_notify, duration, description)
+        return events.Event(chat_id, date_real, date_notify, duration, description, category, rating)
 
     def first_entity_value(entities, entity):
         if entity not in entities:

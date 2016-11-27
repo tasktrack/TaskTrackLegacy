@@ -42,7 +42,13 @@ def telegram_command_handle(updater, db_control):
                    'Например:\n' \
                    '01.01.2001 00:00 Поздравить друзей с Новым Годом!\n' \
                    '< или >\n' \
-                   '01.01.01 00:00 Поздравть друзей с Новым Годом!\n\n' \
+                   '01.01.01 00:00 Поздравить друзей с Новым Годом!\n\n' \
+                   'Также, поддерживается расширенный формат ввода\n' \
+                   'После указания даты и времени, можно указать дату и время напоминания по такому же формату ' \
+                   'dd.mm.yy hh:mm, указать продолжительность события по шаблону < {число} мин >' \
+                   'важность события по формату < {важность}! > и категорию вида < #{категория} >\n' \
+                   'Например:\n' \
+                   '01.01.2001 20:00 10 мин 1! #основное Выжить\n' \
                    'Бот умеет говорить умные фразы! Пообщайтесь с ним!'
         bot.sendMessage(chat_id=update.message.chat_id, text=response)
         logging.info('Command \'help\' invoked by chat id [{0}]'.format(update.message.chat_id))
@@ -178,7 +184,8 @@ def terminal_command_handle(db_control, ev_map):
             print('Next event is:\n{event}'.format(event=ev_map.next_event))
         elif response == 'lreq':
             request = input('Enter a message to analyse: ')
-            lang = language_processing.LanguageProcessing()
+            # В тестовом режиме передается wit-токен равный нулю
+            lang = language_processing.LanguageProcessing(0)
             print(lang.analyse(0, request))
         else:
             print('Unknown command')
