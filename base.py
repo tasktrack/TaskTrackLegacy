@@ -178,7 +178,8 @@ def terminal_command_handle(db_control, ev_map):
             print('Next event is:\n{event}'.format(event=ev_map.next_event))
         elif response == 'lreq':
             request = input('Enter a message to analyse: ')
-            lang = language_processing.LanguageProcessing()
+            # В тестовом режиме передается wit-токен равный нулю
+            lang = language_processing.LanguageProcessing(0)
             print(lang.analyse(0, request))
         else:
             print('Unknown command')
