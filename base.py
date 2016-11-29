@@ -133,7 +133,7 @@ def telegram_command_handle(updater, db_control):
                 db_control.add_event(db_control.get_events_count(), result[1])
                 db_control.stop()
                 # Уведомление об успешной записи, требуется доработка формата вывода
-                bot.sendMessage(chat_id=uchat, text='Хорошо, я напомню тебе об этом {date}'.format(date=result.date_notify))
+                bot.sendMessage(chat_id=uchat, text='Хорошо, я напомню тебе об этом {date}'.format(date=result[1].date_notify))
 
     from telegram.ext import MessageHandler, Filters
     echo_handler = MessageHandler([Filters.text], echo)
