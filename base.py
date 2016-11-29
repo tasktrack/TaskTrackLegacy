@@ -12,6 +12,7 @@ import os
 from configuration import Configuration
 import telegram
 
+
 def telegram_command_handle(updater, db_control):
     '''
     Обработка команд из чата Telegram
@@ -45,7 +46,7 @@ def telegram_command_handle(updater, db_control):
                    '01.01.01 00:00 Поздравить друзей с Новым Годом!\n\n' \
                    'Также, поддерживается расширенный формат ввода\n' \
                    'После указания даты и времени, можно указать дату и время напоминания по такому же формату ' \
-                   'dd.mm.yy hh:mm, указать продолжительность события по шаблону < {число} мин >' \
+                   'dd.mm.yy hh:mm, указать продолжительность события по шаблону < {число} мин > ' \
                    'важность события по формату < {важность}! > и категорию вида < #{категория} >\n' \
                    'Например:\n' \
                    '01.01.2001 20:00 10 мин 1! #основное Выжить\n' \
@@ -114,25 +115,8 @@ def telegram_command_handle(updater, db_control):
         # Несколько тестовых проверок на совпадения
         if 'привет'.casefold() in utext_cf:
             bot.sendMessage(chat_id=uchat, text='Привет, друг!')
-        elif 'напомни'.casefold() in utext_cf:
-            bot.sendMessage(chat_id=uchat, text='Разве мы уже на \"ты\"? ;)')
-            days = ['понедельник', 'вторник', 'сред', 'четверг', 'пятниц', 'суббот', 'воскресенье']
-            days_match = []
-
-            for day in days:
-                if day in utext_cf:
-                    if day == 'сред':
-                        day = 'cреду'
-                    elif day == 'пятниц':
-                        day = 'пятницу'
-                    elif day == 'суббот':
-                        day = 'субботу'
-                    days_match.append(day)
-            if len(days_match):
-                dayformat = ', '.join(days_match[:-1]) + ' и %s' % days_match[-1]
-                bot.sendMessage(chat_id=uchat, text='Хорошо, я напомню тебе об этом в %s' % dayformat)
         else:
-            lang = language_processing.LanguageProcessing()
+            lang = language_processing.LanguageProcessing(0)
             result = lang.analyse(uchat, utext)
             if result is None:
                 # Несколько случайных фраз на случай, если боту нечего ответить
@@ -146,7 +130,7 @@ def telegram_command_handle(updater, db_control):
             else:
                 # Запись события в базу данных
                 db_control.start()
-                db_control.add_event(db_control.get_events_count(), result)
+                db_control.add_event(db_control.get_events_count(), result[1])
                 db_control.stop()
                 # Уведомление об успешной записи, требуется доработка формата вывода
                 bot.sendMessage(chat_id=uchat, text='Хорошо, я напомню тебе об этом {date}'.format(date=result.date_notify))
@@ -156,12 +140,12 @@ def telegram_command_handle(updater, db_control):
     dispatcher.add_handler(echo_handler)
 
 
-def terminal_command_handle(db_control, ev_map):
+def terminal_command_handle(db_control):
     while True:
         # Приём команд на выполнение
         response = input('> ').casefold()
         if response == 'stop': break
-        elif response == 'say hi': print('Oh hi there')
+        elif response == 'ping': print('pong')
         elif response == 'eadd':
             # Добавляет тестовое событие в базу данных
             e = events.Event(0, datetime.datetime.now(), datetime.datetime.now(), 0, 'datacontrol add')
@@ -175,13 +159,6 @@ def terminal_command_handle(db_control, ev_map):
             for event in db_control.get_events(False):
                 print(event)
             db_control.stop()
-        elif response == 'emap':
-            e = events.Event(0, datetime.datetime.now(), datetime.datetime.now(), 0, 'eventmap test')
-            db_control.start()
-            ev_map = event_map.EventMap(db_control.get_events())
-            db_control.stop()
-            print(ev_map)
-            print('Next event is:\n{event}'.format(event=ev_map.next_event))
         elif response == 'lreq':
             request = input('Enter a message to analyse: ')
             # В тестовом режиме передается wit-токен равный нулю
@@ -222,11 +199,6 @@ if __name__ == "__main__":
     # Создание экземпляра контролирующего работу с базой данных класса
     db_control = data_control.DataControl('database.db')
 
-    # Подключение к базе данных и создание первичной карты дня
-    db_control.start()
-    ev_map = event_map.EventMap(db_control.get_events())
-    db_control.stop()
-
     # Обработка команд из чата Telegram
     telegram_command_handle(updater, db_control)
 
@@ -236,7 +208,7 @@ if __name__ == "__main__":
     print('Running the main script normally')
 
     # Режим терминала
-    terminal_command_handle(db_control, ev_map)
+    terminal_command_handle(db_control)
 
     # Отключение бота
     logging.info('Stopping main updater polling')

@@ -42,6 +42,7 @@ class LanguageProcessing:
             # for group in re.match(self.pattern, request).groups():
             #     print('>', group)
             result = [mode, self.formal(chat_id, request)]
+            print(result)
         else:
             # Вызов функции распознавания человеческой речи
             print('>> informal')
@@ -60,7 +61,8 @@ class LanguageProcessing:
 
         year_real = exp.group('year_real')
         if len(year_real) == 2:
-            year_real = int('20' + year_real)
+            year_real = '20' + year_real
+        year_real = int(year_real)
 
         date_real = datetime.datetime(year_real,
                                       int(exp.group('month_real')),
