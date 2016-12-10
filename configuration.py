@@ -1,7 +1,6 @@
+import os
 import configparser
 from configparser import ConfigParser
-import os
-
 
 class Configuration:
     def __init__(self, filepath):
@@ -12,9 +11,11 @@ class Configuration:
         # Если директорий не существует, они создаются, и в последнюю помещается пустой файл конфигурации
         if not os.path.exists(dirpath):
             os.makedirs(dirpath)
+        if not os.path.exists(filepath):
             with open(filepath, 'w') as f:
-                f.write('[Main]\nTelegramToken = ')
-                f.write('\nWitToken = ')
+                f.write('[Main]\n')
+                f.write('TelegramToken = \n')
+                f.write('WitToken = \n')
         self.config = ConfigParser()
         self.config.read(self.config_path)
 
