@@ -24,7 +24,8 @@ class DataControl:
         self.connect = sqlite3.connect(self.datapath)
         self.cursor = self.connect.cursor()
         # Создание таблицы в базе данных, если таковая еще не существует.
-        self.cursor.execute('CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), rating VARCHAR(50), description VARCHAR(200))')
+        self.cursor.execute(
+            'CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT , chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), rating VARCHAR(50), description VARCHAR(200))')
         self.connect.commit()
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -46,7 +47,8 @@ class DataControl:
         self.connect = sqlite3.connect(self.datapath)
         self.cursor = self.connect.cursor()
 
-        self.cursor.execute('CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), rating VARCHAR(50), description VARCHAR(200))')
+        self.cursor.execute(
+            'CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT , chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), rating VARCHAR(50), description VARCHAR(200))')
         self.connect.commit()
 
     def stop(self):
@@ -89,16 +91,16 @@ class DataControl:
         Вывод загруженных событий
         :return:
         '''
-        print('{chat_id:^9} | {date_real} | {date_notify} | {duration} | {cat:^10} | {rating:^3} | {desc}'.format(chat_id='ID Чата',
-                                                                                                 date_real='Дата события',
-                                                                                                 date_notify='Дата напоминания',
-                                                                                                 duration='Длительность',
-                                                                                                 cat='Категория',
-                                                                                                 rating='Рейтинг',
-                                                                                                 desc='Описание'))
+        print('{chat_id:^9} | {date_real} | {date_notify} | {duration} | {cat:^10} | {rating:^3} | {desc}'.format(
+            chat_id='ID Чата',
+            date_real='Дата события',
+            date_notify='Дата напоминания',
+            duration='Длительность',
+            cat='Категория',
+            rating='Рейтинг',
+            desc='Описание'))
         for event in self.get_events():
             print(event)
-
 
     def get_events_count(self):
         '''
@@ -108,7 +110,7 @@ class DataControl:
         '''
         return len(self.get_events())
 
-    def get_events(self, output = False):
+    def get_events(self, output=False):
         '''
         Получение списка всех имеющихся в базе данных событий
         :param output:
@@ -120,10 +122,14 @@ class DataControl:
 
         event_list = []
         if output:
-            print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6:8} {7}'.format('ID', 'ID Чата', 'Дата события', 'Дата напоминания', 'Длительность', 'Категория', 'Важность', 'Описание'))
+            print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6:8} {7}'.format('ID', 'ID Чата', 'Дата события',
+                                                                            'Дата напоминания', 'Длительность',
+                                                                            'Категория', 'Важность', 'Описание'))
         while row is not None:
             if output:
-                print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6:8} {7}'.format(str(row[0]), str(row[1]), str(row[2]), str(row[3]), str(row[4]), str(row[5]), str(row[6]), str(row[7])))
+                print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6:8} {7}'.format(str(row[0]), str(row[1]), str(row[2]),
+                                                                                str(row[3]), str(row[4]), str(row[5]),
+                                                                                str(row[6]), str(row[7])))
 
             date_real = self.date_convert(str(row[2]))
             date_notify = self.date_convert(str(row[3]))
@@ -139,7 +145,7 @@ class DataControl:
             row = self.cursor.fetchone()
         return event_list
 
-    def add_event(self, id, event):
+    def add_event(self, event):
         '''
         Добавление в базу данных нового события
         :param id:
@@ -147,9 +153,12 @@ class DataControl:
         :return:
         '''
         if self.connect is None or self.cursor is None: return None
-        self.cursor.execute("INSERT INTO events (id, chat_id,date_real,date_notify,"
+        self.cursor.execute("INSERT INTO events (chat_id,date_real,date_notify,"
                             "duration,category,rating,description) VALUES ('{0}',"
-                            "'{1}','{2}','{3}','{4}','{5}','{6}','{7}')".format(id, event.chat_id, event.date_real, event.date_notify, event.duration, event.category, event.rating, event.description))
+                            "'{1}','{2}','{3}','{4}','{5}','{6}')".format(event.chat_id, event.date_real,
+                                                                                event.date_notify, event.duration,
+                                                                                event.category, event.rating,
+                                                                                event.description))
         self.connect.commit()
 
     def load_actual_events(self):
@@ -163,6 +172,46 @@ class DataControl:
 
         return actual_events
 
-    def round_minutes(self, t):  # t - объект datetime
-        return t - datetime.timedelta(seconds=t.second, microseconds=t.microsecond)
+    def get_info(self, chat):
+        if self.cursor is None: return None
+        self.cursor.execute('SELECT * FROM events WHERE chat_id = ?', (str(chat),))
+        row = self.cursor.fetchone()
+        events_list = ''
+        while row is not None:
+            events_list += 'Дата: ' + str(row[2]) + ' Событие: ' + str(row[7]) + '\n'
+            if row[3] != row[2]:
+                events_list += 'Дата напоминания: ' + str(row[3]) + '\n'
+            if row[4] != 'None':
+                events_list += ' Длительность: ' + str(row[4]) + '\n'
+            if row[5] != 'None':
+                events_list += ' Категория: ' + str(row[6]) + '\n'
+            if row[6] != 'None':
+                events_list += ' Важность: ' + str(row[6]) + '\n'
 
+            row = self.cursor.fetchone()
+        return events_list
+
+    def delete_event(self, event, chat):
+        if self.cursor is None: return None
+        self.cursor.execute('SELECT * FROM events WHERE (chat_id = ? AND description = ?)', (str(chat), event))
+        row = self.cursor.fetchone()
+        if row is None:
+            return 'Нам не удалось найти такое событие'
+        self.cursor.execute("DELETE FROM events WHERE (chat_id = ? AND description = ?)", (str(chat), event))
+        self.cursor.execute('SELECT * FROM events WHERE (chat_id = ? AND description = ?)', (str(chat), event))
+        row = self.cursor.fetchone()
+        while row is not None:
+            print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6:8} {7}'.format(str(row[0]), str(row[1]), str(row[2]),
+                                                                                str(row[3]), str(row[4]), str(row[5]),
+                                                                                str(row[6]), str(row[7])))
+
+            row = self.cursor.fetchone()
+        self.connect.commit()
+        if row is None:
+            return 'Событие удалено'
+        else:
+            return 'error'
+
+
+def round_minutes(self, t):  # t - объект datetime
+    return t - datetime.timedelta(seconds=t.second, microseconds=t.microsecond)

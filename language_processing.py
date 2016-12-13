@@ -7,16 +7,18 @@ import events
 
 
 class LanguageProcessing:
-
     def __init__(self, access_token):
         # Шаблон для проверки соответствия формального запроса
-        self.pattern = '^(?P<mode>\+|\-)' \
-                       '\s(?P<day_real>\d{2})\.(?P<month_real>\d{2})\.(?P<year_real>\d{2}|\d{4})' \
-                       '\s(?P<hour_real>\d{2}):(?P<minutes_real>\d{2})' \
-                       '(\s(?P<day_notify>\d{2})\.(?P<month_notify>\d{2})\.(?P<year_notify>\d{2}|\d{4})' \
-                       '\s(?P<hour_notify>\d{2}):(?P<minutes_notify>\d{2}))?' \
-                       '(\s(?P<duration>\d+)\s?мин)?(\s(?P<rating>\d+)!)?(\s#(?P<category>\w+))?' \
-                       '\s(?P<description>.+)$'
+        self.pattern_add = '^(?P<mode>\+)' \
+                           '\s(?P<day_real>\d{2})\.(?P<month_real>\d{2})\.(?P<year_real>\d{2}|\d{4})' \
+                           '\s(?P<hour_real>\d{2}):(?P<minutes_real>\d{2})' \
+                           '(\s(?P<day_notify>\d{2})\.(?P<month_notify>\d{2})\.(?P<year_notify>\d{2}|\d{4})' \
+                           '\s(?P<hour_notify>\d{2}):(?P<minutes_notify>\d{2}))?' \
+                           '(\s(?P<duration>\d+)\s?мин)?(\s(?P<rating>\d+)!)?(\s#(?P<category>\w+))?' \
+                           '\s(?P<description>.+)$'
+
+        self.pattern_delete = '^(?P<mode>\-)' \
+                              '\s(?P<description>.+)$'
 
         self.actions = {
             'send': self.send,
@@ -35,14 +37,20 @@ class LanguageProcessing:
         :return:
         '''
         result = None
-        if not re.match(self.pattern, request) is None:
+        if not re.match(self.pattern_add, request) is None:
             print('>> formal')
-            mode = re.match(self.pattern, request).group('mode')
+            mode = re.match(self.pattern_add, request).group('mode')
             # Строки для отладки
             # for group in re.match(self.pattern, request).groups():
             #     print('>', group)
             result = [mode, self.formal(chat_id, request)]
             print(result)
+        elif not re.match(self.pattern_delete, request) is None:
+            print('>> formal')
+            mode = re.match(self.pattern_delete, request).group('mode')
+            result = [mode, re.match(self.pattern_delete, request).group('description'), chat_id]
+            print(result)
+
         else:
             # Вызов функции распознавания человеческой речи
             print('>> informal')
@@ -57,7 +65,7 @@ class LanguageProcessing:
         :param request:
         :return:
         '''
-        exp = re.match(self.pattern, request)
+        exp = re.match(self.pattern_add, request)
 
         year_real = exp.group('year_real')
         if len(year_real) == 2:

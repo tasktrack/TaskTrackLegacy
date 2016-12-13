@@ -24,18 +24,37 @@ def start(bot, update):
 def help_me(bot, update):
     response = 'Список доступных команд:\n' \
                '/start - Проверка работоспособности бота\n' \
-               '/help - Справка по использованию бота\n\n' \
-               'Формат ввода:\n' \
-               '< или >\n' \
+               '/help - Справка по использованию бота\n' \
+               '/info - Список ваших активных задач\n\n' \
+               'Для добавления нового события введите:\n' \
+               '+ {Дата события} {Время события} {Описание события}\n' \
                'Например:\n' \
+               '+ 01.01.2017 00:00 Поздравить друзей с Новым Годом\n' \
                '< или >\n' \
+               '+ 01.01.17 00:00 Поздравить друзей с Новым Годом\n\n' \
                'Также, поддерживается расширенный формат ввода\n' \
-               'После указания даты и времени, можно указать дату и время напоминания по такому же формату ' \
+               'После указания даты и времени, можно указать дату и время напоминания по такому же формату\n' \
                'важность события по формату < {важность}! > и категорию вида < #{категория} >\n' \
                'Например:\n' \
+               '+ 08.02.2017 09:00 01.02.2017 20:00 1! #работа День Рождения начальника\n\n' \
+               'Для удаления события введите:\n' \
+               '- {Описание события}\n' \
+               'Например:\n' \
+               '- Позвонить жене\n' \
+               'Все прошедшие события удаляются автоматически\n' \
                'Бот умеет говорить умные фразы! Пообщайтесь с ним!'
     bot.sendMessage(chat_id=update.message.chat_id, text=response)
     logging.info('Command \'help\' invoked by chat id [{0}]'.format(update.message.chat_id))
+
+
+def info(bot, update):
+    db_control.start()
+    chat_id = update.message.chat_id
+    event_list = db_control.get_info(chat_id)
+    response = 'Список ваших задач:\n'
+    response += event_list
+    bot.sendMessage(chat_id=update.message.chat_id, text=response)
+    logging.info('Command \'info\' invoked by chat id [{0}]'.format(update.message.chat_id))
 
 
 def test(bot, update):
@@ -102,13 +121,21 @@ def echo(bot, update):
                        'Я в себя, если что-то, но я иду к победе']
             bot.sendMessage(chat_id=uchat, text=replies[randint(0, len(replies) - 1)])
             bot.sendMessage(chat_id=uchat, text='Введите /help, чтобы получить справку о формате ввода')
+        elif result[0] == '-':
+            db_control.start()
+            msg = db_control.delete_event(result[1], result[2])
+            db_control.stop()
+            bot.sendMessage(chat_id=uchat,
+                            text=msg)
+
         else:
             # Запись события в базу данных
             db_control.start()
-            db_control.add_event(db_control.get_events_count(), result[1])
+            db_control.add_event(result[1])
             db_control.stop()
             # Уведомление об успешной записи, требуется доработка формата вывода
-            bot.sendMessage(chat_id=uchat, text='Хорошо, я напомню тебе об этом {date}'.format(date=result[1].date_notify))
+            bot.sendMessage(chat_id=uchat,
+                            text='Хорошо, я напомню тебе об этом {date}'.format(date=result[1].date_notify))
 
 
 def telegram_command_handle(updater, db_control):
@@ -127,6 +154,9 @@ def telegram_command_handle(updater, db_control):
     help_me_handler = CommandHandler('help', help_me)
     dispatcher.add_handler(help_me_handler)
 
+    info_handler = CommandHandler('info', info)
+    dispatcher.add_handler(info_handler)
+
     test_handler = CommandHandler('test', test)
     dispatcher.add_handler(test_handler)
 
@@ -141,14 +171,16 @@ def terminal_command_handle(db_control):
     while True:
         # Приём команд на выполнение
         response = input('> ').casefold()
-        if response == 'stop': break
-        elif response == 'ping': print('pong')
+        if response == 'stop':
+            break
+        elif response == 'ping':
+            print('pong')
         elif response == 'eadd':
             # Добавляет тестовое событие в базу данных
             e = events.Event(0, datetime.datetime.now(), datetime.datetime.now(), 0, 'datacontrol add')
             db_control.start()
             # Добавляем событие и присваиваем ему id количества имеющихся элементов в базе
-            db_control.add_event(db_control.get_events_count(), e)
+            db_control.add_event(e)
             db_control.stop()
         elif response == 'eshow':
             # Выводит события из базы данных на экран
@@ -163,6 +195,7 @@ def terminal_command_handle(db_control):
             print(lang.analyse(0, request))
         else:
             print('Unknown command')
+
 
 if __name__ == "__main__":
     # Настройка логирования
