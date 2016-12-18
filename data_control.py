@@ -3,7 +3,9 @@
 import sqlite3
 import events
 import datetime
-import asyncio
+
+
+# import asyncio
 
 
 class DataControl:
@@ -17,22 +19,22 @@ class DataControl:
         return '> datacontrol > \'{0}\', \'{1}\', \'{2}\''.format(self.datapath, self.connect, self.cursor)
 
     def __enter__(self):
-        '''
+        """
         Подключение к базе данных
         :return:
-        '''
+        """
         self.connect = sqlite3.connect(self.datapath)
         self.cursor = self.connect.cursor()
         # Создание таблицы в базе данных, если таковая еще не существует.
         self.cursor.execute(
-            'CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT , chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), rating VARCHAR(50), description VARCHAR(200))')
+            'CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT , chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), description VARCHAR(200))')
         self.connect.commit()
 
     def __exit__(self, exc_type, exc_value, traceback):
-        '''
+        """
         Отключение от базы данных
         :return:
-        '''
+        """
         self.cursor.close()
         self.cursor = None
         self.connect.close()
@@ -40,15 +42,15 @@ class DataControl:
         return self
 
     def start(self):
-        '''
+        """
         Подключение к базе данных (эквивалент __enter__)
         :return:
-        '''
+        """
         self.connect = sqlite3.connect(self.datapath)
         self.cursor = self.connect.cursor()
 
         self.cursor.execute(
-            'CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT , chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), rating VARCHAR(50), description VARCHAR(200))')
+            'CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT , chat_id VARCHAR(50), date_real VARCHAR(50), date_notify VARCHAR(50), duration VARCHAR(50), category VARCHAR(50), description VARCHAR(200))')
         self.connect.commit()
 
     def stop(self):
@@ -91,13 +93,12 @@ class DataControl:
         Вывод загруженных событий
         :return:
         '''
-        print('{chat_id:^9} | {date_real} | {date_notify} | {duration} | {cat:^10} | {rating:^3} | {desc}'.format(
+        print('{chat_id:^9} | {date_real} | {date_notify} | {duration} | {cat:^10} | {desc}'.format(
             chat_id='ID Чата',
             date_real='Дата события',
             date_notify='Дата напоминания',
             duration='Длительность',
             cat='Категория',
-            rating='Рейтинг',
             desc='Описание'))
         for event in self.get_events():
             print(event)
@@ -122,14 +123,14 @@ class DataControl:
 
         event_list = []
         if output:
-            print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6:8} {7}'.format('ID', 'ID Чата', 'Дата события',
-                                                                            'Дата напоминания', 'Длительность',
-                                                                            'Категория', 'Важность', 'Описание'))
+            print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6}'.format('ID', 'ID Чата', 'Дата события',
+                                                                      'Дата напоминания', 'Длительность',
+                                                                      'Категория', 'Описание'))
         while row is not None:
             if output:
-                print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6:8} {7}'.format(str(row[0]), str(row[1]), str(row[2]),
-                                                                                str(row[3]), str(row[4]), str(row[5]),
-                                                                                str(row[6]), str(row[7])))
+                print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6}'.format(str(row[0]), str(row[1]), str(row[2]),
+                                                                          str(row[3]), str(row[4]), str(row[5]),
+                                                                          str(row[7])))
 
             date_real = self.date_convert(str(row[2]))
             date_notify = self.date_convert(str(row[3]))
@@ -139,26 +140,24 @@ class DataControl:
                                      date_notify=date_notify,
                                      duration=row[4],
                                      description=row[7],
-                                     category=row[5],
-                                     rating=row[6])
+                                     category=row[5])
             event_list.append(new_event)
             row = self.cursor.fetchone()
         return event_list
 
     def add_event(self, event):
-        '''
+        """
         Добавление в базу данных нового события
-        :param id:
         :param event:
         :return:
-        '''
-        if self.connect is None or self.cursor is None: return None
+        """
+        if self.connect is None or self.cursor is None:
+            return None
         self.cursor.execute("INSERT INTO events (chat_id,date_real,date_notify,"
-                            "duration,category,rating,description) VALUES ('{0}',"
-                            "'{1}','{2}','{3}','{4}','{5}','{6}')".format(event.chat_id, event.date_real,
-                                                                                event.date_notify, event.duration,
-                                                                                event.category, event.rating,
-                                                                                event.description))
+                            "duration,category,description) VALUES ('{0}',"
+                            "'{1}','{2}','{3}','{4}','{5}')".format(event.chat_id, event.date_real,
+                                                                    event.date_notify, event.duration,
+                                                                    event.category, event.description))
         self.connect.commit()
 
     def load_actual_events(self):
@@ -185,9 +184,6 @@ class DataControl:
                 events_list += ' Длительность: ' + str(row[4]) + '\n'
             if row[5] != 'None':
                 events_list += ' Категория: ' + str(row[6]) + '\n'
-            if row[6] != 'None':
-                events_list += ' Важность: ' + str(row[6]) + '\n'
-
             row = self.cursor.fetchone()
         return events_list
 
@@ -202,8 +198,8 @@ class DataControl:
         row = self.cursor.fetchone()
         while row is not None:
             print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6:8} {7}'.format(str(row[0]), str(row[1]), str(row[2]),
-                                                                                str(row[3]), str(row[4]), str(row[5]),
-                                                                                str(row[6]), str(row[7])))
+                                                                            str(row[3]), str(row[4]), str(row[5]),
+                                                                            str(row[6]), str(row[7])))
 
             row = self.cursor.fetchone()
         self.connect.commit()
@@ -212,6 +208,5 @@ class DataControl:
         else:
             return 'error'
 
-
-def round_minutes(self, t):  # t - объект datetime
-    return t - datetime.timedelta(seconds=t.second, microseconds=t.microsecond)
+    def round_minutes(self, t):  # t - объект datetime
+        return t - datetime.timedelta(seconds=t.second, microseconds=t.microsecond)

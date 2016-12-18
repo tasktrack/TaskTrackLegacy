@@ -2,6 +2,7 @@ import os
 import configparser
 from configparser import ConfigParser
 
+
 class Configuration:
     def __init__(self, filepath):
         # Путь к файлу конфигурации
@@ -20,13 +21,13 @@ class Configuration:
         self.config.read(self.config_path)
 
     def get_option(self, section, option, default=None):
-        '''
+        """
         Возвращает значение параметра option из раздела section
         :param section:
         :param option:
         :param default:
         :return:
-        '''
+        """
         try:
             return self.config.get(section, option)
         except (configparser.NoSectionError, configparser.NoOptionError):

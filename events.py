@@ -2,7 +2,7 @@
 
 
 class Event:
-    def __init__(self, chat_id, date_real, date_notify, duration, description, category = 'basic', rating = 1):
+    def __init__(self, chat_id, date_real, date_notify, duration, description, category='basic'):
         # Уникальный id пользователя
         self.chat_id = chat_id
         # Реальная дата события
@@ -15,16 +15,13 @@ class Event:
         self.description = description
         # Категория события для сортировок и выборочного вывода (в будущем)
         self.category = category
-        # Важность события по категориям
-        self.rating = rating
 
     def __repr__(self):
         result = '< {id} | {date_real} | {date_notify} ' \
-                 '| {duration} | {category} | {rating} | {description} >'.format(id=self.chat_id,
-                                                                                 date_real=self.date_real,
-                                                                                 date_notify=self.date_notify,
-                                                                                 duration=self.duration,
-                                                                                 category=self.category,
-                                                                                 rating=self.rating,
-                                                                                 description=self.description)
+                 '| {duration} | {category} | {description} >'.format(id=self.chat_id,
+                                                                      date_real=self.date_real,
+                                                                      date_notify=self.date_notify,
+                                                                      duration=self.duration,
+                                                                      category=self.category,
+                                                                      description=self.description)
         return result
