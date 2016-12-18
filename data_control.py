@@ -175,15 +175,25 @@ class DataControl:
         if self.cursor is None: return None
         self.cursor.execute('SELECT * FROM events WHERE chat_id = ?', (str(chat),))
         row = self.cursor.fetchone()
+        counter = 0
         events_list = ''
         while row is not None:
-            events_list += 'Дата: ' + str(row[2]) + ' Событие: ' + str(row[7]) + '\n'
+            counter += 1
+            events_list += 'Событие {}: '.format(counter) + str(row[7]) + '\n'
+
+            real_full_date = str(row[2]).split()
+            real_date = real_full_date[0].split('-')
+            real_time = real_full_date[1].split(':')
+            real_conv = '{day}.{month}.{year} в {hours}:{minutes}'.format(day=real_date[2], month=real_date[1], year=real_date[0], hours=real_time[0], minutes=real_time[1])
+
+            events_list += 'Дата: {}'.format(real_conv)
             if row[3] != row[2]:
-                events_list += 'Дата напоминания: ' + str(row[3]) + '\n'
+                events_list += '\nДата напоминания: ' + str(row[3]) + '\n'
             if row[4] != 'None':
-                events_list += ' Длительность: ' + str(row[4]) + '\n'
+                events_list += '\nДлительность: ' + str(row[4]) + '\n'
             if row[5] != 'None':
-                events_list += ' Категория: ' + str(row[6]) + '\n'
+                events_list += '\nКатегория: ' + str(row[6]) + '\n'
+            events_list += '\n'
             row = self.cursor.fetchone()
         return events_list
 
@@ -192,7 +202,7 @@ class DataControl:
         self.cursor.execute('SELECT * FROM events WHERE (chat_id = ? AND description = ?)', (str(chat), event))
         row = self.cursor.fetchone()
         if row is None:
-            return 'Нам не удалось найти такое событие'
+            return 'Не удалось найти такое событие'
         self.cursor.execute("DELETE FROM events WHERE (chat_id = ? AND description = ?)", (str(chat), event))
         self.cursor.execute('SELECT * FROM events WHERE (chat_id = ? AND description = ?)', (str(chat), event))
         row = self.cursor.fetchone()
@@ -204,7 +214,7 @@ class DataControl:
             row = self.cursor.fetchone()
         self.connect.commit()
         if row is None:
-            return 'Событие удалено'
+            return 'Событие удалено. Совсем. Навсегда. Это грустно. Напомнить тебе о чем-нибудь другом?'
         else:
             return 'error'
 

@@ -11,8 +11,8 @@ import language_processing
 from configuration import Configuration
 
 import telegram
-from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
 from telegram import ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import CommandHandler, MessageHandler, Filters, Updater, Job
 
 b1 = KeyboardButton('Добавить событие')
 b2 = KeyboardButton('Удалить событие')
@@ -23,9 +23,11 @@ mode = ''
 
 
 def start(bot, update):
-    bot.sendMessage(chat_id=update.message.chat_id, text='Привет! Меня зовут TaskTrack, и я предназначен, '
-                                                         'чтобы помочь людям не забыть о важных делах. '
-                                                         'Попросите меня напомнить о чем-нибудь!',
+    bot.sendMessage(chat_id=update.message.chat_id,
+                    text='Привет! Меня зовут TaskTrack, и я предназначен, '
+                    'чтобы помочь людям не забыть о важных делах. '
+                    'Я сразу перейду на "ты", чтобы создать непринужденную атмосферу, ладно? '
+                    'Попроси меня напомнить о чем-нибудь!',
                     reply_markup=keyboard)
     logging.info('Command \'start\' invoked by chat id [{0}]'.format(update.message.chat_id))
 
@@ -41,7 +43,8 @@ def help_me(bot, update):
                '< или >\n' \
                '01.01.17 00:00 Поздравить друзей с Новым Годом\n\n' \
                'Также, поддерживается расширенный формат ввода\n' \
-               'После указания даты и времени можно указать дату и время напоминания по такому же формату и категорию вида < #{категория} >\n' \
+               'После указания даты и времени можно указать дату и время ' \
+               'напоминания по такому же формату и категорию вида < #{категория} >\n' \
                'Например:\n' \
                '08.02.2017 09:00 01.02.2017 20:00 #работа День Рождения начальника\n\n' \
                'Для удаления события нажмите на кнопку "Удалить событие", а затем введите его описание\n' \
@@ -65,44 +68,70 @@ def echo(bot, update):
     uchat = update.message.chat_id
 
     # Несколько тестовых проверок на совпадения
-    if 'привет'.casefold() in utext_cf:
-        bot.sendMessage(chat_id=uchat, text='Привет, друг!')
-    elif utext == 'Добавить событие':
+    if 'привет' in utext_cf:
+        bot.sendMessage(chat_id=uchat, text='Привет, друг! Хочешь кофейку, или секретное задание?', reply_markup=keyboard)
+    elif utext.casefold() == 'добавить событие':
         mode = '+'
-        response = 'Введите данные о событии в формате: {Дата события} {Время события} {Описание события}\n' \
-                   'Для отмены ввода напишите "отмена"'
+        response = 'Введите данные о событии в формате:\n[Дата события] [Время события] [Описание события]\n\n' \
+                   'Например:\n' \
+                   '01.01.2345 00:00 Отпраздновать Галактический Новый Год!\n' \
+                   '20.12.16 18:00 Экзамен в Технопарке\n\n' \
+                   'Для отмены ввода напишите "Отмена"'
         bot.sendMessage(chat_id=uchat, text=response)
-    elif utext == 'Удалить событие':
-        response = 'Введите название события\n' \
-                   'Для отмены ввода напишите "отмена"'
+    elif utext_cf == 'удалить событие':
+        response = 'О каком событии мне не напоминать тебе? Введи название события, пожалуйста.\n\n' \
+                   'Для отмены ввода напишите "Отмена"'
         bot.sendMessage(chat_id=uchat, text=response)
         mode = '-'
-    elif utext == 'Список активных задач':
+    elif utext_cf == 'список активных задач':
         db_control.start()
         chat_id = update.message.chat_id
         event_list = db_control.get_info(chat_id)
-        response = 'Список ваших задач:\n'
-        response += event_list
+        if event_list == '':
+            response = 'Хмм... Кажется, активных событий сейчас нет. Может, настало время исправить это?'
+        else:
+            response = 'Список текущих активных задач:\n\n'
+            response += event_list
         bot.sendMessage(chat_id=update.message.chat_id, text=response, reply_markup=keyboard)
-    elif utext == 'отмена':
+    elif utext_cf == 'отмена':
         mode = ''
-        bot.sendMessage(chat_id=uchat, text='Выберете действие', reply_markup=keyboard)
+        bot.sendMessage(chat_id=uchat, text='Выберите действие', reply_markup=keyboard)
     elif mode == '+':
         lang = language_processing.LanguageProcessing()
         result = lang.analyse(uchat, utext)
         if result:
-            # Запись события в базу данных
-            db_control.start()
-            db_control.add_event(result[0])
-            db_control.stop()
-            mode = ''
-            # Уведомление об успешной записи, требуется доработка формата вывода
-            bot.sendMessage(chat_id=uchat,
-                            text='Хорошо, я напомню тебе об этом {date}'.format(date=result[0].date_notify),
-                            reply_markup=keyboard)
+            delay = round((result[0].date_notify - datetime.datetime.now()).total_seconds())
+
+            if delay < 0:
+                bot.sendMessage(chat_id = uchat,
+                                text='Пожалуй, я не смогу напомнить о событии, '
+                                     'если время напоминания уже прошло ¯\_(ツ)_/¯\n'
+                                     'Возможно, время указано неправильно?',
+                                reply_markup=keyboard)
+            else:
+                # Запись события в базу данных
+                # Исправить
+                db_control.start()
+                db_control.add_event(result[0])
+                queue.put(Job(callback, delay, repeat=False,
+                              context=dict(chat_id=update.message.chat_id,
+                                           title='{}'.format(result[0].description),
+                                           text='{date}:\n{desc}'.format(date=result[0].date_notify_conv, desc=result[0].description))))
+
+                db_control.stop()
+                mode = ''
+                # Уведомление об успешной записи
+                if delay > 0:
+                    bot.sendMessage(chat_id=uchat,
+                                    text='Хорошо, я напомню тебе об этом {date}.'.format(date=result[0].date_notify_conv),
+                                    reply_markup=keyboard)
         else:
             mode = ''
-            bot.sendMessage(chat_id=uchat, text='Что-то пошло не так, попробуйте еще раз', reply_markup=keyboard)
+            bot.sendMessage(chat_id=uchat,
+                            text='Что-то пошло не так, не могу понять что. '
+                                 'Может, погода испортилась и мои шестеренки теперь хуже крутятся. '
+                                 'Попробуй еще раз, пожалуйста!',
+                            reply_markup=keyboard)
     elif mode == '-':
         db_control.start()
         msg = db_control.delete_event(utext, uchat)
@@ -111,21 +140,11 @@ def echo(bot, update):
         bot.sendMessage(chat_id=uchat,
                         text=msg, reply_markup=keyboard)
     else:
-        mode = ''
-        response = 'Что-то пошло не так, попробуйте еще раз\n' \
-                   'Введите /help для получения справки'
-        bot.sendMessage(chat_id=uchat,
-                        text=response, reply_markup=keyboard)
-
-        # else:
-        # Несколько случайных фраз на случай, если боту нечего ответить
-        #     replies = ['Открытый разум подобен крепости, врата которой распахнуты, а стража погрязла в беспутстве',
-        #                 'Ничто не истинно, всё дозволено',
-        #                'Всё проходит, пройдёт и это. Ничто не проходит',
-        #                'Ну, возможно',
-        #                'Я в себя, если что-то, но я иду к победе']
-        #     bot.sendMessage(chat_id=uchat, text=replies[randint(0, len(replies) - 1)])
-        #     bot.sendMessage(chat_id=uchat, text='Введите /help, чтобы получить справку о формате ввода')
+        response = 'Что-то пошло не так, не могу понять что. ' \
+                   'Вернее, понять могу, но говорить не буду. ' \
+                   'Попробуй ещё раз, пожалуйста!\n' \
+                   'Введите /help для получения справки.'
+        bot.sendMessage(chat_id=uchat, text=response, reply_markup=keyboard)
 
 
 def telegram_command_handle(updater):
@@ -177,6 +196,17 @@ def terminal_command_handle(db_control):
             print('Unknown command')
 
 
+def callback(bot, job):
+    bot.sendMessage(chat_id=job.context.get('chat_id'),
+                    text='Напоминание о событии {0}\n\n'
+                         'Попроси меня напомнить еще о чем-нибудь!'.format(job.context.get('text')),
+                    reply_markup=keyboard)
+    print('Callback > [{chat_id}] was notified at {date}'.format(chat_id=job.context.get('chat_id'),
+                                                                 date=datetime.datetime.now()))
+    db_control.start()
+    db_control.delete_event(job.context.get('title'), job.context.get('chat_id'))
+    db_control.stop()
+
 if __name__ == "__main__":
     # Настройка логирования
     if not os.path.exists('logs/base.log'):
@@ -184,7 +214,6 @@ if __name__ == "__main__":
             os.mkdir('logs/')
         with open('logs/base.log', 'w') as f:
             f.write('[[[ LOGFILE BOUND TO < {} >  MODULE ]]]\n\n'.format(os.path.split(__file__)[1]))
-
     logging.basicConfig(filename='logs/base.log', format='<%(asctime)s> [%(name)s] [%(levelname)s]: %(message)s',
                         level=logging.INFO)
 
@@ -201,7 +230,23 @@ if __name__ == "__main__":
         print('Critical Error > Telegram Access Token is invalid. Terminal halted.\nCheck the configuration file.')
         exit()
 
+    queue = updater.job_queue
     db_control = data_control.DataControl('database.db')
+
+    db_control.start()
+    current_events = db_control.get_events()
+    db_control.stop()
+
+    counter = 0
+    for event in current_events:
+        delay = round((event.date_notify - datetime.datetime.now()).total_seconds())
+        queue.put(Job(callback, delay, repeat=False,
+                      context=dict(chat_id=event.chat_id,
+                                   title='{}'.format(event.description),
+                                   text='{date}:\n{desc}'.format(date=event.date_notify_conv,
+                                                                 desc=event.description))))
+        counter += 1
+    print('Added {} events to queue'.format(counter))
 
     # Обработка команд из чата Telegram
     telegram_command_handle(updater)
