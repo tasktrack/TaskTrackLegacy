@@ -130,7 +130,7 @@ class DataControl:
             if output:
                 print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6}'.format(str(row[0]), str(row[1]), str(row[2]),
                                                                           str(row[3]), str(row[4]), str(row[5]),
-                                                                          str(row[7])))
+                                                                          str(row[6])))
 
             date_real = self.date_convert(str(row[2]))
             date_notify = self.date_convert(str(row[3]))
@@ -139,7 +139,7 @@ class DataControl:
                                      date_real=date_real,
                                      date_notify=date_notify,
                                      duration=row[4],
-                                     description=row[7],
+                                     description=row[6],
                                      category=row[5])
             event_list.append(new_event)
             row = self.cursor.fetchone()
@@ -179,7 +179,7 @@ class DataControl:
         events_list = ''
         while row is not None:
             counter += 1
-            events_list += 'Событие {}: '.format(counter) + str(row[7]) + '\n'
+            events_list += 'Событие {}: '.format(counter) + str(row[6]) + '\n'
 
             real_full_date = str(row[2]).split()
             real_date = real_full_date[0].split('-')
@@ -192,7 +192,7 @@ class DataControl:
             if row[4] != 'None':
                 events_list += '\nДлительность: ' + str(row[4]) + '\n'
             if row[5] != 'None':
-                events_list += '\nКатегория: ' + str(row[6]) + '\n'
+                events_list += '\nКатегория: ' + str(row[5]) + '\n'
             events_list += '\n'
             row = self.cursor.fetchone()
         return events_list
@@ -207,9 +207,9 @@ class DataControl:
         self.cursor.execute('SELECT * FROM events WHERE (chat_id = ? AND description = ?)', (str(chat), event))
         row = self.cursor.fetchone()
         while row is not None:
-            print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6:8} {7}'.format(str(row[0]), str(row[1]), str(row[2]),
+            print('{0:3} {1:7} {2:12} {3:16} {4:12} {5:9} {6}'.format(str(row[0]), str(row[1]), str(row[2]),
                                                                             str(row[3]), str(row[4]), str(row[5]),
-                                                                            str(row[6]), str(row[7])))
+                                                                            str(row[6])))
 
             row = self.cursor.fetchone()
         self.connect.commit()
