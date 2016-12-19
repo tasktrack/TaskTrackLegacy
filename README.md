@@ -1,3 +1,5 @@
+[![Travis](https://img.shields.io/travis/tasktrack/TaskTrack.Telegram.svg)](https://travis-ci.org/tasktrack/TaskTrack.Telegram)
+
 # TaskTrack.Telegram
 Бот, который напомнит Вам лечь спать, если вы забудете.
 
