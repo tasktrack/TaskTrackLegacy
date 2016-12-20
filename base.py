@@ -21,7 +21,6 @@ keyboard = ReplyKeyboardMarkup([[b1, b2], [b3]], one_time_keyboard=1)
 
 mode = ''
 
-
 def start(bot, update):
     bot.sendMessage(chat_id=update.message.chat_id,
                     text='Привет! Меня зовут TaskTrack, и я предназначен, '
@@ -97,7 +96,8 @@ def echo(bot, update):
         mode = ''
         bot.sendMessage(chat_id=uchat, text='Выберите действие', reply_markup=keyboard)
     elif mode == '+':
-        lang = language_processing.LanguageProcessing()
+        wit_token = bot_conf.get_option('Main', 'WitToken')
+        lang = language_processing.LanguageProcessing(wit_token, bot)
         result = lang.analyse(uchat, utext)
         if result:
             delay = round((result[0].date_notify - datetime.datetime.now()).total_seconds())
@@ -140,12 +140,41 @@ def echo(bot, update):
         bot.sendMessage(chat_id=uchat,
                         text=msg, reply_markup=keyboard)
     else:
-        response = 'Что-то пошло не так, не могу понять что. ' \
-                   'Вернее, понять могу, но говорить не буду. ' \
-                   'Попробуй ещё раз, пожалуйста!\n' \
-                   'Введите /help для получения справки.'
-        bot.sendMessage(chat_id=uchat, text=response, reply_markup=keyboard)
+        #response = 'Что-то пошло не так, не могу понять что. ' \
+        #           'Вернее, понять могу, но говорить не буду. ' \
+        #           'Попробуй ещё раз, пожалуйста!\n' \
+        #           'Введите /help для получения справки.'
+        #bot.sendMessage(chat_id=uchat, text=response, reply_markup=keyboard)
+        wit_token = bot_conf.get_option('Main', 'WitToken')
+        lg_processing = language_processing.LanguageProcessing(wit_token, bot)
 
+        result = lg_processing.analyse(uchat, utext)
+        if result:
+            delay = round((result[0].date_notify - datetime.datetime.now()).total_seconds())
+
+            if delay < 0:
+                bot.sendMessage(chat_id = uchat,
+                                text='Пожалуй, я не смогу напомнить о событии, '
+                                     'если время напоминания уже прошло ¯\_(ツ)_/¯\n'
+                                     'Возможно, время указано неправильно?',
+                                reply_markup=keyboard)
+            else:
+                # Запись события в базу данных
+                # Исправить
+                db_control.start()
+                db_control.add_event(result[0])
+                queue.put(Job(callback, delay, repeat=False,
+                              context=dict(chat_id=update.message.chat_id,
+                                           title='{}'.format(result[0].description),
+                                           text='{date}:\n{desc}'.format(date=result[0].date_notify_conv, desc=result[0].description))))
+
+                db_control.stop()
+                mode = ''
+                # Уведомление об успешной записи
+                if delay > 0:
+                    bot.sendMessage(chat_id=uchat,
+                                    text='Хорошо, я напомню \"{description}\" {date}.'.format(description=result[0].description, date=result[0].date_notify_conv),
+                                    reply_markup=keyboard)
 
 def telegram_command_handle(updater):
     """
@@ -190,8 +219,9 @@ def terminal_command_handle(db_control):
         elif response == 'lreq':
             request = input('Enter a message to analyse: ')
             # В тестовом режиме передается wit-токен равный нулю
-            lang = language_processing.LanguageProcessing()
-            print(lang.analyse(0, request))
+            #wit_token = bot_conf.get_option('Main', 'WitToken')
+            #lang = language_processing.LanguageProcessing(wit_token, db_control)
+            #print(lang.analyse(0, request))
         else:
             print('Unknown command')
 
