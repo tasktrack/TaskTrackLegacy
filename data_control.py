@@ -220,3 +220,24 @@ class DataControl:
 
     def round_minutes(self, t):  # t - объект datetime
         return t - datetime.timedelta(seconds=t.second, microseconds=t.microsecond)
+
+    def get_last_id(self):
+        if self.cursor is None: return None
+        self.cursor.execute('SELECT * FROM events WHERE id = (SELECT max(id) FROM events) ')
+        row = self.cursor.fetchone()
+        result = str(row[0])
+        print(result)
+        return result
+
+    def get_event_by_id(self, i):
+        if self.cursor is None: return None
+        self.cursor.execute('SELECT * FROM events WHERE id = ?', (str(i),))
+        row = self.cursor.fetchone()
+        return row
+
+    def get_event(self, chat, date, desc):
+        if self.cursor is None: return None
+        self.cursor.execute('SELECT * FROM events WHERE (chat_id = ? AND date_real = ? AND description = ?)', (str(chat), str(date), str(desc)))
+        row = self.cursor.fetchone()
+        result = str(row[0])
+        return result

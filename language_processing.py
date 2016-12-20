@@ -103,7 +103,8 @@ class LanguageProcessing:
             if date_string is not None:
                 now = datetime.datetime.now()
                 if date_string.lower() == "сегодня":
-                    date = datetime.datetime(now.year, now.month, now.day, now.hour + 1, 00)
+                    # date = datetime.datetime(now.year, now.month, now.day, now.hour + 1, 00)
+                    date = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute + 1)
                 elif date_string.lower() == "завтра":
                     date = datetime.datetime(now.year, now.month, now.day + 1, 12, 00)
                 elif date_string.lower() == "послезавтра":
