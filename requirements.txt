@@ -2,5 +2,5 @@ certifi==2016.9.26
 future==0.16.0
 python-telegram-bot==5.2.0
 requests==2.12.1
-urllib3==1.19.1
+urllib3==1.26.5
 wit==4.2.0
